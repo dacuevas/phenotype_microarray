@@ -88,7 +88,6 @@ sub timepoints
             my $date1 = str2time($data->{$file}->{$datatype}->{'time'}->[$i]);
             my $date2 = str2time($data->{$file}->{$datatype}->{'time'}->[$i+1]);
             my $hrsDiff = ($date2 - $date1) / 3600;
-            print STDERR $hrsDiff."\n";
             push @$points, sprintf("%.1f", $points->[$i]+$hrsDiff);
 		}
 		@{$data->{$file}->{$datatype}->{'time'}} = @$points;
