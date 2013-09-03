@@ -217,8 +217,11 @@ class Experiment:
         for i in META:
             __experiment_time.append(i[0])
         for i in __experiment_time[4:]:
-            experiment_time.append(int(i))
-        for x in range(0, experiment_time[-1], 25):
+            experiment_time.append(float(i))
+###        for x in range(0, experiment_time[-1], 25):
+###            time_vector.append(x)
+        # 0.4 is approximately 25 minutes
+        for x in arange(0, experiment_time[-1], 0.4):
             time_vector.append(x)
 
 
