@@ -125,31 +125,31 @@ sub readData {
 
     # Time difference is calculated to record relative time
     # instead of current time
-    my ($prevTime, $diffTime, $firstTime);
+    my ($prevTime, $currTime);
     my @timePoints;
     while( <FILE> ) {
         chomp;
         # Find time point
         if( /(\d.*?\s.{11})\s+/ ) {
-            my $currTime = str2time($1);
+            my $timeRead = str2time($1);
             if( ! defined $prevTime ) {
-                $firstTime = $currTime;
-                $diffTime = "0.0";
+                push(@timePoints, "0.0");
+                $currTime = "0.0";
             }
             else {
-                $diffTime = sprintf("%.1f", ($currTime - $firstTime) / 3600);
+                my $diffTime = ($timeRead - $prevTime) / 3600;
+                $currTime = sprintf("%.1f", $timePoints[-1] + $diffTime);
+                push(@timePoints, $currTime);
             }
-            # Insert new hour if it is greater than last recorded
-            push(@timePoints, $diffTime);
             # Set new previous time
-            $prevTime = $currTime;
+            $prevTime = $timeRead;
         }
         elsif( /(\w\d+)\s+([0-9.]+)/ ) {
             # Well = $1
             # Data = $2
             #print STDERR "Well $1, Data $2\n";
             #<>;
-            $data->{$name}->{$rep}->{$1}->{$diffTime} = $2;
+            $data->{$name}->{$rep}->{$1}->{$currTime} = $2;
         }
     }
     @$time = @timePoints if @timePoints > @$time;
