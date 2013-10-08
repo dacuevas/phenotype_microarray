@@ -5,6 +5,7 @@ use strict;
 use Date::Parse;
 use File::Basename;
 use Getopt::Long;
+use Statistics::Basic qw(median);
 
 
 ################################################
@@ -31,7 +32,6 @@ REQUIRED
 OPTIONS
     -p, --plate "platePath.txt"     : Plate filepath
     -r, --reps                      : Replicate flag
-    --columnorder                   : Print out in column order (PM analysis) (In development)
     -?, -h, --help                  : This usage message
 
 NOTES
@@ -40,11 +40,11 @@ NOTES
 
         <Clone Name>_<Replicate Letter>_<other text>.txt
         Regex used:    <Clone Name> -- [A-Za-z0-9-.]+
-                       <Replicate Letter> -- [A-Za-z]+
+                       <Replicate Letter> -- [A-Za-z0-9]+
 
         When replicates are not indicated,
         <Clone Name>_<other text>.txt
-        Regex used:    <Clone Name> -- [A-Za-z0-9-.]+
+        Regex used:    <Clone Name> -- [A-Za-z0-9-._]+
 
 END
 ;
@@ -99,19 +99,17 @@ sub readPlate {
 # data hash-reference object
 ###
 sub readData {
-    ###my $file = shift; my $data = shift; my $reps = shift;
-    ###my $time = shift;
     my ($file, $data, $reps, $time) = @_;
     my ($name, $rep);
-    my $fname = basename($file);
+    my $fname = fileparse($file, qr/\.[^.]*/); # Capture file extension
 
     # Grab name (and replicate if applicable)
     if( $reps ) {
-        ($name, $rep) = $fname =~ /^([A-Za-z0-9-.]+)_([A-Za-z]+)/;
+        ($name, $rep) = $fname =~ /^([A-Za-z0-9-.]+)_([A-Za-z0-9]+)/;
     }
     # Set replicate to 1 if not applicable
     else {
-        ($name) = $fname =~ /^([A-Za-z0-9-.]+)/;
+        ($name) = $fname =~ /^([A-Za-z0-9-._]+)/;
         $rep = 1;
     }
 
@@ -125,12 +123,18 @@ sub readData {
 
     # Time difference is calculated to record relative time
     # instead of current time
-    my ($prevTime, $currTime);
+    my ($prevTime, $currTime, $bckgrnd);
     my @timePoints;
     while( <FILE> ) {
         chomp;
+        # Check for background
+        if( /BACKGROUND/ ) {
+            $bckgrnd = 1;
+        }
         # Find time point
-        if( /(\d.*?\s.{11})\s+/ ) {
+        elsif( /(\d.*?\s.{11})\s+/ ) {
+            # No longer in background
+            $bckgrnd = 0;
             my $timeRead = str2time($1);
             if( ! defined $prevTime ) {
                 push(@timePoints, "0.0");
@@ -144,7 +148,7 @@ sub readData {
             # Set new previous time
             $prevTime = $timeRead;
         }
-        elsif( /(\w\d+)\s+([0-9.]+)/ ) {
+        elsif( ! $bckgrnd && /(\w\d+)\s+([0-9.]+)/ ) {
             # Well = $1
             # Data = $2
             #print STDERR "Well $1, Data $2\n";
@@ -154,6 +158,50 @@ sub readData {
     }
     @$time = @timePoints if @timePoints > @$time;
     close(FILE);
+}
+
+
+###
+# Calculate the median of the replicates and return the new data
+# hash. This hash will not have a replicates key.
+###
+sub calcMedian {
+    my ($data) = @_;
+    my $newdata = {};
+    foreach my $c ( keys %$data ) {
+        my $repCounter = 0;
+        foreach my $r ( keys %{$data->{$c}} ) {
+            ++$repCounter;
+            foreach my $w ( keys %{$data->{$c}->{$r}} ) {
+                my @ods = ();
+                foreach my $t( keys %{$data->{$c}->{$r}->{$w}} ) {
+                    my $val = ($data->{$c}->{$r}->{$w}->{$t}) ?
+                                $data->{$c}->{$r}->{$w}->{$t} :
+                                0;
+                    if( $repCounter == 1 ) {
+                        $newdata->{$c}->{$w}->{$t} = ();
+                    }
+                    push(@{$newdata->{$c}->{$w}->{$t}}, $val);
+                }
+            }
+        }
+    }
+    foreach my $c ( keys %$newdata ) {
+        foreach my $w ( keys %{$newdata->{$c}} ) {
+            foreach my $t ( keys %{$newdata->{$c}->{$w}} ) {
+                #print $t."\n";
+                my @ods = @{$newdata->{$c}->{$w}->{$t}};
+                my $numReps = @ods;
+                my $medvector = median()->set_size($numReps);
+                foreach( @ods ) {
+                    $medvector->insert($_);
+                }
+                my $median = $medvector->query;
+                $newdata->{$c}->{$w}->{$t} = $median;
+            }
+        }
+    }
+    return $newdata;
 }
 
 
@@ -168,35 +216,44 @@ sub readData {
 sub printData {
     my ($data, $plate, $reps, $time) = @_;
     foreach my $c ( keys %$data ) {
-        foreach my $r ( keys %{$data->{$c}} ) {
-            foreach my $w ( keys %{$data->{$c}->{$r}} ) {
+        foreach my $r ( map { $_->[0] } sort {$a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } map { [$_,/([A-Za-z]+)/,/(\d+)/] } keys %{$data->{$c}} ) {
+            # If the replicates flag is set then we are in the wells already
+            if( $reps ) {
+                my $w = $r;
                 my @ods = ();
                 foreach my $t( @$time ) {
-                    my $val = ($data->{$c}->{$r}->{$w}->{$t}) ?
-                                $data->{$c}->{$r}->{$w}->{$t} :
+                    my $val = ($data->{$c}->{$w}->{$t}) ?
+                                $data->{$c}->{$w}->{$t} :
                                 0;
                     push(@ods, $val);
                 }
-
                 my $ms = $plate ? $plate->{$w}->{main_source} : 0;
                 my $s = $plate ? $plate->{$w}->{substrate} : 0;
-                if( $reps ) {
+                $plate ?
+                    print join("\t", ($c, $ms, $s, @ods))."\n" :
+                    print join("\t", ($c, $w, @ods))."\n"
+                ;
+            }
+            else {
+                foreach my $w ( map { $_->[0] } sort {$a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] } map { [$_,/([A-Za-z]+)/,/(\d+)/] } keys %{$data->{$c}->{$r}} ) {
+                    my @ods = ();
+                    foreach my $t( @$time ) {
+                        my $val = ($data->{$c}->{$r}->{$w}->{$t}) ?
+                                    $data->{$c}->{$r}->{$w}->{$t} :
+                                    0;
+                        push(@ods, $val);
+                    }
+
+                    my $ms = $plate ? $plate->{$w}->{main_source} : 0;
+                    my $s = $plate ? $plate->{$w}->{substrate} : 0;
                     $plate ?
-                        print join("\t", ($c, $r, $ms, $s, @ods)) :
-                        print join("\t", ($c, $r, $w, @ods))
+                        print join("\t", ($c, $ms, $s, @ods))."\n" :
+                        print join("\t", ($c, $w, @ods))."\n"
                     ;
                 }
-                else {
-                    $plate ?
-                        print join("\t", ($c, $ms, $s, @ods)) :
-                        print join("\t", ($c, $w, @ods))
-                    ;
-                }
-                print "\n";
             }
         }
     }
-
 }
 
 ###################################################
@@ -271,28 +328,22 @@ foreach my $f ( @filepaths ) {
     &readData($f, $data, $opts->{reps}, \@time);
 }
 
+# If replicates exist, calculate median
+$data = &calcMedian($data) if $opts->{reps};
+
 ######################################################
 ## Data printout process
 ######################################################
 
 # Print out headers first
 # Depends on if a plate file was supplied or not
-# and if replcates are kept separate
-if( $opts->{reps} ) {
-    $plate ?
-        print "clone\trep\tmain_source\tsubstrate" :
-        print "clone\trep\twell";
-}
-else {
-    $plate ?
-        print "clone\tmain_source\tsubstrate" :
-        print "clone\twell";
-}
+$plate ?
+    print "clone\tmain_source\tsubstrate" :
+    print "clone\twell";
 
 # Print out hours
 foreach my $timeIter( @time ) {
     print "\t".sprintf("%.1f", $timeIter);
-    $timeIter += 0.5;
 }
 print "\n"; # End of header line
 

@@ -288,8 +288,8 @@ class ExperimentUnit:
                 linearFlag = False
 
 
-            # Misfits test -- starting OD @ 30 minutes >= 0.25
-            if repList[0] >= 0.25:
+            # Misfits test -- starting OD within first 2 hours >= 0.18
+            if [ i for (i,j) in enumerate(repList[:4]) if j >= 0.18 ]:
                 rawTypes["Misfits"].append("%s_%s_%s" % (clone, mainSource, substrate))
                 filterList.append(repIdx)
 

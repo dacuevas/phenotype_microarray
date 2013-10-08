@@ -172,7 +172,7 @@ for f in ${inputfile[@]}; do
 	f=$(echo $f | perl -ne 's/([\(\)])/\\$1/g; print;') # Escape any parentheses in input file name
 	out="${rname}_${outputname}.txt"
 	parsedfiles=("${parsedfiles[@]}" "$outputdir/$out") # Append to array
-	cmd="${scriptdir}/biologout_parse1 $inputfiledir/$f > $outputdir/${out}"
+	cmd="${scriptdir}/biologout_parse2 $inputfiledir/$f > $outputdir/${out}"
 	[[ $verbose ]] && getTime && echo "${currtime}	Executing $cmd" >&1
 	eval $cmd
 	[[ $? -ne 0 ]] && getTime && error "${currtime}	Fail on command: $cmd"
