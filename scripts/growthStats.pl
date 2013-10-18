@@ -24,7 +24,7 @@ while (<FILE>) {
 ###	++$clones->{$clone}->{$bin};
 ###	++$substrates->{$substrate}->{$bin};
 ###	if ($bin =~ m/(growth|linear)/) {
-
+        next if $harmonicMean =~ /nan/i;
 		if (! defined $hms->{clones}->{$clone}) {
 			$hms->{clones}->{$clone} = ();
 		}
@@ -86,7 +86,7 @@ my $stats = {};
 
 ###open(FILE,">stats_substrates_$suffix.txt") or die "Couldn't open file 'stats_substrates_$suffix.txt' for writing\n";
 ###print FILE join "\t",("substrate","numGrowth","numLinear","numNoGrowth","numMisfits","meanHM","medianHM","stdevHM","minHM","maxHM\n");
-foreach my $substrate(keys $hms->{substrates}) {
+foreach my $substrate(keys %{$hms->{substrates}}) {
 	my @currHms = @{$hms->{substrates}->{$substrate}};
 	my ($numGrowth,$numLinear,$numNoGrowth,$numMisfits);
 
@@ -109,8 +109,8 @@ foreach my $substrate(keys $hms->{substrates}) {
 
 open(FILE,">function_distribution_$suffix.txt") or die "Couldn't open 'function_distribution_$suffix.txt' for writing\n";
 print FILE join "\t",("clone","substrate","category","harmonic_mean","substrate_mean","substrate_std\n");
-foreach my $clone(keys $data) {
-	foreach my $substrate(keys $data->{$clone}) {
+foreach my $clone(keys %$data) {
+	foreach my $substrate(keys %{$data->{$clone}}) {
 		my $hm = $data->{$clone}->{$substrate};
 		my $mean = $stats->{$substrate}->{mean};
 		my $stdev = $stats->{$substrate}->{stdev};
