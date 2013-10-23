@@ -114,8 +114,8 @@ foreach my $clone(keys %$data) {
 		my $hm = $data->{$clone}->{$substrate};
 		my $mean = $stats->{$substrate}->{mean};
 		my $stdev = $stats->{$substrate}->{stdev};
-        my $lowBound = $mean-$stdev*2;
-        my $highBound = $mean+$stdev*2;
+        my $lowBound = $mean-$stdev*3;
+        my $highBound = $mean+$stdev*3;
 		my $category = $hm >= $lowBound && $hm <= $highBound && $hm < 0.5      ? "No Growth"
 						 : $hm >= $lowBound && $hm <= $highBound && $hm >= 0.5 ? "Expected Growth"
 						 : $hm > $mean+($stdev*2)							   ? "Gain of Function"
