@@ -57,6 +57,7 @@ def usage():
 input_file = None
 output_file_name = None # Prefix for all output files
 output_dir = None
+filterFlag = False
 window_size = 3
 try:
 	opts, args = getopt.getopt(sys.argv[1:],"hi:o:n:")
@@ -64,17 +65,19 @@ except getopt.GetoptError:
 	usage()
 	sys.exit(2)
 for opt, arg in opts:
-	if opt == "-h":
-		usage()
-		sys.exit(2)
-	elif opt == "-i":
-		input_file = arg
-	elif opt == "-o":
-		output_file_name = arg
-	elif opt == "-n":
-		output_dir = arg
-	else:
-		pass
+    if opt == "-h":
+        usage()
+        sys.exit(2)
+    elif opt == "-i":
+        input_file = arg
+    elif opt == "-o":
+        output_file_name = arg
+    elif opt == "-n":
+        output_dir = arg
+    elif opt == "-f":
+        filterFlag = True
+    else:
+        pass
 
 # Check if arguments were not given
 if not input_file or not output_file_name or not output_dir:
@@ -744,8 +747,9 @@ asymptote = []
 p2 = []
 max_growth_rate = []
 filterList = []
-rawTypes = {"Misfits" : [], "NoGrowth" : [], "Linear" : [], "Growth" : []}
-ExperimentUnit(META = META).filter(filterList,rawTypes)
+if filterFlag:
+    rawTypes = {"Misfits" : [], "NoGrowth" : [], "Linear" : [], "Growth" : []}
+    ExperimentUnit(META = META).filter(filterList,rawTypes)
 for i in iteration_block_for_replicates_average:
 	ExperimentUnit(META = META).rep_median(filterList, average_of_replicates, i)
 	ExperimentUnit(META = META).rep_stdev(filterList, stdev_of_replicates, i)
@@ -1009,24 +1013,25 @@ outfile.close()
 
 
 # Output file 8: Filters
-outfile = open("%s/filter_info.txt" % output_dir,"w")
-outfile.write("clone\tmainsource\tsubstrate\tfiltergroup\n")
-for name in rawTypes["Misfits"]:
-    clone, mainsource, substrate = name.split("_")
-    outfile.write("%s\t%s\t%s\tmisfits\n" % (clone, mainsource, substrate))
+if filterFlag:
+    outfile = open("%s/filter_info.txt" % output_dir,"w")
+    outfile.write("clone\tmainsource\tsubstrate\tfiltergroup\n")
+    for name in rawTypes["Misfits"]:
+        clone, mainsource, substrate = name.split("_")
+        outfile.write("%s\t%s\t%s\tmisfits\n" % (clone, mainsource, substrate))
 
-for name in rawTypes["NoGrowth"]:
-    clone, mainsource, substrate = name.split("_")
-    outfile.write("%s\t%s\t%s\tnogrowth\n" % (clone, mainsource, substrate))
+    for name in rawTypes["NoGrowth"]:
+        clone, mainsource, substrate = name.split("_")
+        outfile.write("%s\t%s\t%s\tnogrowth\n" % (clone, mainsource, substrate))
 
-for name in rawTypes["Linear"]:
-    clone, mainsource, substrate = name.split("_")
-    outfile.write("%s\t%s\t%s\tlinear\n" % (clone, mainsource, substrate))
+    for name in rawTypes["Linear"]:
+        clone, mainsource, substrate = name.split("_")
+        outfile.write("%s\t%s\t%s\tlinear\n" % (clone, mainsource, substrate))
 
-for name in rawTypes["Growth"]:
-    clone, mainsource, substrate = name.split("_")
-    outfile.write("%s\t%s\t%s\tgrowth\n" % (clone, mainsource, substrate))
-outfile.close()
+    for name in rawTypes["Growth"]:
+        clone, mainsource, substrate = name.split("_")
+        outfile.write("%s\t%s\t%s\tgrowth\n" % (clone, mainsource, substrate))
+    outfile.close()
 
 
 # Create heatmap
