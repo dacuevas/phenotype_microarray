@@ -1,0 +1,1 @@
+perl -i -npe 's/\r\n?/\n/g' $1
