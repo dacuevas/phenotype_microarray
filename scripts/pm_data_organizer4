@@ -101,7 +101,7 @@ foreach my $file (@{$option_hash->{'files'}})
 	my $fname = basename($file);
 	if( $option_hash->{"replicates"} > 1 ) {
 		#($name, $rep) = $fname =~ /([A-Za-z0-9]+\d?)([A-Za-z0-9])/i;
-		($name, $rep) = $fname =~ /^([A-Za-z.]*\d+)([A-Za-z0-9-]+)/i;
+		($name, $rep) = $fname =~ /^([A-Za-z.]*\d+)_([A-Za-z0-9-]+)/i;
 	}
 	else {
 		#($name) = $fname =~ /([A-Za-z0-9]+)/i;

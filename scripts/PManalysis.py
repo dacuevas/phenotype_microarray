@@ -58,9 +58,10 @@ input_file = None
 output_file_name = None # Prefix for all output files
 output_dir = None
 filterFlag = False
+newHMFlag = False
 window_size = 3
 try:
-	opts, args = getopt.getopt(sys.argv[1:],"hi:o:n:")
+	opts, args = getopt.getopt(sys.argv[1:],"fhi:o:n:z")
 except getopt.GetoptError:
 	usage()
 	sys.exit(2)
@@ -76,6 +77,8 @@ for opt, arg in opts:
         output_dir = arg
     elif opt == "-f":
         filterFlag = True
+    elif opt == "-z":
+        newHMFlag = True
     else:
         pass
 
@@ -331,7 +334,10 @@ class ExperimentUnit:
             for j in range(x, y):
                 if j not in filterList:
                     replicates.append(self.META[i][j])
-            __average_META.append(median(map(float, replicates)))#Convert META objects to float
+            if len(replicates) != 0:
+                __average_META.append(median(map(float, replicates)))#Convert META objects to float
+            else:
+                __average_META.append(nan)
         __iteration_block_1 = [len(META) - 4]
         __iteration_block_2 = [0]
         indexes_from_iteration_block(__iteration_block_1, __iteration_block_2)
@@ -344,9 +350,10 @@ class ExperimentUnit:
             for j in range(x, y):
                 if j not in filterList:
                     replicates.append(self.META[i][j])
-            if len(replicates) == 0:
-                print replicates
-            __stdev_META.append(array(map(float, replicates)).std())
+            if len(replicates) != 0:
+                __stdev_META.append(array(map(float, replicates)).std())
+            else:
+                __stdev_META.append(nan)
         __iteration_block_1 = [len(META) - 4]
         __iteration_block_2 = [0]
         indexes_from_iteration_block(__iteration_block_1, __iteration_block_2)
@@ -510,16 +517,20 @@ class ExperimentGroup:
 
 class Clone:
     '''instance to analyze a clone with regard to its many growth conditions'''
-    def __init__(self, logistic_model_by_clones = None, asymptote_by_clones = None):
+    def __init__(self, logistic_model_by_clones = None, asymptote_by_clones = None, maxgrowthrate_by_clones = None):
         self.logistic_model_by_clones = logistic_model_by_clones
         self.asymptote_by_clones = asymptote_by_clones
+        self.maxgrowthrate_by_clones = maxgrowthrate_by_clones
     def harmonic_mean(self, harmonic_mean): #The harmonic mean represents the average of rates of growth. In this method,
                                             #the asymptote is weighted atributing a higher mean to the clones that accumulate
                                             #more biomass H = N/(1**-1sum(yi+assymptote)
         __ratio = []
         for i in range(len(self.logistic_model_by_clones)):
             for x in range(len(self.logistic_model_by_clones[i])):
-                __ratio.append(1/(self.logistic_model_by_clones[i][x]+ self.asymptote_by_clones[i]))
+                if newHMFlag:
+                    __ratio.append(1/(self.logistic_model_by_clones[i][x]+ self.asymptote_by_clones[i]*self.maxgrowthrate_by_clones[i]))
+                else:
+                    __ratio.append(1/(self.logistic_model_by_clones[i][x]+ self.asymptote_by_clones[i]))
         __iteration_block_1 = [len(self.logistic_model_by_clones[0])]*len(self.logistic_model_by_clones)
         __iteration_block_2 = [0]
         indexes_from_iteration_block(__iteration_block_1, __iteration_block_2)
@@ -799,6 +810,8 @@ logistic_model_ordered_by_clones = []
 logistic_model_by_clones = []
 asymptote_ordered_by_clones = []
 asymptote_by_clones = []
+maxgrowthrate_ordered_by_clones = []
+maxgrowthrate_by_clones = []
 a=-1
 while a < len(different_clones)-1:
 	a +=1
@@ -811,11 +824,13 @@ while a < len(different_clones)-1:
 	a +=1
 	for i in range(a, len(asymptote), len(different_clones)):
 		asymptote_ordered_by_clones.append(asymptote[i])
+		maxgrowthrate_ordered_by_clones.append(max_growth_rate[i])
 iteration_block_for_clones_1 = [len(different_growth_conditions)]*len(different_clones)
 iteration_block_for_clones_2 = [0]
 indexes_from_iteration_block(iteration_block_for_clones_1, iteration_block_for_clones_2)
 sublist_by_iteration_set(logistic_model_ordered_by_clones, iteration_block_for_clones_2, logistic_model_by_clones)
 sublist_by_iteration_set(asymptote_ordered_by_clones, iteration_block_for_clones_2, asymptote_by_clones)
+sublist_by_iteration_set(maxgrowthrate_ordered_by_clones, iteration_block_for_clones_2, maxgrowthrate_by_clones)
 
 
 print "Calculating harmonic means and classifications\t\t(step 6/9)"
@@ -825,7 +840,9 @@ harmonic_mean_b = []
 classification = []
 classification_b = []
 for i in range(len(logistic_model_by_clones)):
-    Clone(logistic_model_by_clones = logistic_model_by_clones[i], asymptote_by_clones = asymptote_by_clones[i]).harmonic_mean(harmonic_mean)
+    Clone(logistic_model_by_clones = logistic_model_by_clones[i],
+          asymptote_by_clones = asymptote_by_clones[i],
+          maxgrowthrate_by_clones = maxgrowthrate_by_clones[i]).harmonic_mean(harmonic_mean)
 
 Clone().classification(harmonic_mean, classification)
 
