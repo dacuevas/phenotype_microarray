@@ -16,6 +16,7 @@ Optional
    -d                      : Flag if input is a directory of OD files
    -f                      : Flag if filter should be applied to growth curves during PManalysis
    -h, -?, --help          : This help message
+   --hm                    : Use new harmonic mean calculation
    --reps                  : Flag if there are replicates involved
    -s [scripts_directory]  : Directory where scripts are stored [Default is current directory]
    -v                      : Verbose output
@@ -73,11 +74,12 @@ getTime() {
 scriptname=$(echo $0 | perl -ne '@tmp=split /\//; print $tmp[-1];')
 inputdirflag=1
 filterflag=""
+hmFlag=""
 reps=1
 
 while [[ $# != 0 ]]; do
 	case $1 in
-		-h|-\?|--help)
+	-h|-\?|--help)
 		usage
 		exit 2
 		;;
@@ -90,6 +92,9 @@ while [[ $# != 0 ]]; do
 	-f)
         filterflag="-f"
 		;;
+    --hm)
+        hmFlag="-z"
+        ;;
 	-i)
 		shift
 		[[ ! $1 || $(printf "%s" "$1" | perl -ne 'm/(^-.$)/; print $1;') ]] && echo "Missing -o value" >&2 && usage && exit 2
@@ -201,7 +206,7 @@ eval $cmd
 ################################################
 
 in="$outputdir/${out}"
-cmd="${scriptdir}/PManalysis.py -i $in -o $outputname -n $outputdir $filterflag"
+cmd="${scriptdir}/PManalysis.py -i $in -o $outputname -n $outputdir $filterflag $hmFlag"
 getTime && echo "${currtime}	*****Starting modeling script*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}	Executing $cmd" >&1
 eval $cmd
