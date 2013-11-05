@@ -98,14 +98,15 @@ foreach my $file (@{$option_hash->{'files'}})
 	my ($name, $rep); my $tmp = 0;
 	#($name = $file) =~ s/(EDT\d+)/$1/i;
 	#($name, $rep) = $file =~ /(\w+\d?)(\w)/i;
-	my $fname = basename($file);
+    #my $fname = basename($file);
+    my $fname = fileparse($file, qr/\.[^.]*/);
 	if( $option_hash->{"replicates"} > 1 ) {
 		#($name, $rep) = $fname =~ /([A-Za-z0-9]+\d?)([A-Za-z0-9])/i;
 		($name, $rep) = $fname =~ /^([A-Za-z.]*\d+)_([A-Za-z0-9-]+)/i;
 	}
 	else {
 		#($name) = $fname =~ /([A-Za-z0-9]+)/i;
-		($name) = $fname =~ /([A-Za-z0-9-.]+)/i;
+		($name) = $fname =~ /([A-Za-z0-9-._]+)/i;
 		$rep = 1
 	}
 =pod
