@@ -297,12 +297,12 @@ class ExperimentUnit:
             # Misfits test -- starting OD within first 2 hours >= 0.18
             if [ i for (i,j) in enumerate(repList[:4]) if j >= 0.18 ]:
                 rawTypes["Misfits"].append("%s_%s_%s" % (clone, mainSource, substrate))
-                filterList.append(repIdx)
+                filterList.append(repIdx+1)
 
             # No Growth test -- 1 hour OD >= 24 hour OD + 0.03
             elif repList[1] >= repList[47] + 0.03:
                 rawTypes["NoGrowth"].append("%s_%s_%s" % (clone, mainSource, substrate))
-                filterList.append(repIdx)
+                filterList.append(repIdx+1)
 
             # Linear test -- linear flag pass earlier test
             elif linearFlag:
