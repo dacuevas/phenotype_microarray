@@ -528,7 +528,10 @@ class Clone:
         for i in range(len(self.logistic_model_by_clones)):
             for x in range(len(self.logistic_model_by_clones[i])):
                 if newHMFlag:
-                    __ratio.append(1/(self.logistic_model_by_clones[i][x]+ self.asymptote_by_clones[i]*self.maxgrowthrate_by_clones[i]))
+                    #__ratio.append(1/(self.logistic_model_by_clones[i][x]+ self.asymptote_by_clones[i]*self.maxgrowthrate_by_clones[i]))
+                    # Incorporate asymptote and growth rate into calculation
+                    # Weight asymptote and growth rate
+                    __ratio.append(1/(self.logistic_model_by_clones[i][x]+ (0.75*self.asymptote_by_clones[i]+0.25*self.maxgrowthrate_by_clones[i])))
                 else:
                     __ratio.append(1/(self.logistic_model_by_clones[i][x]+ self.asymptote_by_clones[i]))
         __iteration_block_1 = [len(self.logistic_model_by_clones[0])]*len(self.logistic_model_by_clones)

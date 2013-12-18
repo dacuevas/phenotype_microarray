@@ -206,7 +206,7 @@ eval $cmd
 ################################################
 
 in="$outputdir/${out}"
-cmd="${scriptdir}/PManalysis.py -i $in -o $outputname -n $outputdir $filterflag $hmFlag"
+cmd="python ${scriptdir}/PManalysis.py -i $in -o $outputname -n $outputdir $filterflag $hmFlag"
 getTime && echo "${currtime}	*****Starting modeling script*****" >&1
 [[ $verbose ]] && getTime && echo "${currtime}	Executing $cmd" >&1
 eval $cmd
