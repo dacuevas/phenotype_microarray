@@ -14,7 +14,7 @@ class Models:
         self.data = data
         self.startOD = startOD
         self.maxgrowth = maxgrowth
-        self.mGrowTime - mGrowTime
+        self.mGrowTime = mGrowTime
         self.asymptote = asymptote
         self.time = time
 
@@ -44,7 +44,7 @@ class Models:
                 lagF = lag
                 sseF = sse
 
-        return (logisticData, lagF, sseF)
+        return logisticData, lagF, sseF
 
 #    def Gompertz(self):
 #        '''Create Gompertz model from data'''

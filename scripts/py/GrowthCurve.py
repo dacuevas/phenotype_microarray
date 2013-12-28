@@ -15,29 +15,29 @@ class GrowthCurve:
     '''Bacteria growth curve class'''
     def __init__(self, data, time):
         self.dataReps = data  # OD data values (replicates implied)
-        self.dataMed = py.median(self.data, axis=0)
+        self.dataMed = py.median(self.dataReps, axis=0)
         self.time = time  # time values
-        self.asymptote = self.calcAsymptote()
+        self.asymptote = self.__calcAsymptote()
         self.maxGrowthRate, self.mgrTime = self.__calcMGR()
         self.dataLogistic, self.lag = self.__calcLag()
         self.growthLevel = self.__calcGrowth()
 
     def __calcAsymptote(self):
         '''Obtain the value of the highest OD reading'''
-        stop = self.nReads - 3
+        stop = len(self.time) - 3
         maxA = -1
-        for idx in py.xrange(1, stop):
-            av = py.mean(self.data[idx:idx + 3])
+        for idx in xrange(1, stop):
+            av = py.mean(self.dataMed[idx:idx + 3])
             if av > maxA:
                 maxA = av
         return maxA
 
     def __calcMGR(self):
         '''Obtain the value of the max growth'''
-        stop = self.nReads - 4
+        stop = len(self.time) - 4
         grs = []
-        for idx in py.xrange(1, stop):
-            gr = ((py.log(self.data[idx + 3]) - py.log(self.data[idx])) /
+        for idx in xrange(1, stop):
+            gr = ((py.log(self.dataMed[idx + 3]) - py.log(self.dataMed[idx])) /
                   (self.time[idx + 3] - self.time[idx]))
             grs.append(gr)
         sortIdx = py.argsort(grs)[-2]  # Obtain index of desired growth rate
@@ -47,9 +47,10 @@ class GrowthCurve:
 
     def __calcLag(self):
         '''Obtain the value of the lag phase using best fit model'''
-        logisticData, lag, sseF = Models(self.dataMed, self.dataMed[1],
-                                         self.maxGrowthRate, self.mgrTime,
-                                         self.asymptote, self.time).Logistic()
+        logisticData, lag, sseF = Models.Models(self.dataMed, self.dataMed[1],
+                                                self.maxGrowthRate,
+                                                self.mgrTime, self.asymptote,
+                                                self.time).Logistic()
         return logisticData, lag
 
     def __calcGrowth(self):
