@@ -83,16 +83,12 @@ class PMData:
             numRep = numRep + 1 if clone == prevClone else 1
             self.numReplicates[clone] = numRep
             prevClone = clone
-            if numRep == 1:
+            if clone not in self.dataHash:
                 self.dataHash[clone] = {}
-#            try:
-#                numRep = len(self.dataHash[clone]) + 1
-#                self.numReplicates[clone] += 1
-#            except KeyError:
-#                self.dataHash[clone] = {}
-#                numRep = 1
-#                self.numReplicates[clone] = 1
-            self.dataHash[clone][numRep] = {}
+
+            if numRep not in self.dataHash[clone]:
+                self.dataHash[clone][numRep] = {}
+
             for source, sourceList in self.conditions.items():
                 self.dataHash[clone][numRep][source] = {cond: py.array([])
                                                         for cond in sourceList}
@@ -114,4 +110,13 @@ class PMData:
             # Check which clone + replicate we are observing
             numRep = numRep + 1 if clone == prevClone else 1
             prevClone = clone
-            py.append(self.dataHash[clone][numRep][source][condition], od)
+            self.dataHash[clone][numRep][source][condition] =\
+                py.append(self.dataHash[clone][numRep][source][condition], od)
+
+    def getCloneData(self, clone, source, condition):
+        retArray = py.array([self.dataHash[clone][1][source][condition]])
+        for i in xrange(2, self.numReplicates[clone] + 1):
+            retArray = py.concatenate(
+                (retArray,
+                 py.array([self.dataHash[clone][i][source][condition]])))
+        return retArray
