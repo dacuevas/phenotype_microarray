@@ -18,11 +18,17 @@ my $annData = {};
 open(FILE,"<$filename") or die "Couldn't open '$filename' for reading\n";
 
 my $header = <FILE>;
-
+my $nanList = {};
 while (<FILE>) {
     chomp;
     my($clone,$mainSource,$substrate,$well,$harmonicMean) = split "\t";
-        next if $harmonicMean =~ /nan/i;
+        if ($harmonicMean =~ /nan/i) {
+            if (! defined $nanList->{$clone}) {
+                $nanList->{$clone} = ();
+            }
+            push @{$nanList->{$clone}},$substrate;
+            next;
+        }
         if (! defined $hms->{clones}->{$clone}) {
             $hms->{clones}->{$clone} = ();
         }
@@ -93,7 +99,13 @@ foreach my $clone(keys %$data) {
     }
 }
 
-close FILE;
+# Print out nans
+foreach my $clone(keys %$nanList) {
+    foreach my $substrate(@{$nanList->{$clone}}) {
+        print "$clone\t$substrate\tnan\tnan\tnan\tnan\n";
+    }
+}
+
 
 sub getStats {
     my @data = @{$_[0]};

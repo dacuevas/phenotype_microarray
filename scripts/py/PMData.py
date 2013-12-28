@@ -1,12 +1,15 @@
 # PMData.py
+# Phenotype microarray module for parsing optical density data
+#
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-
+# Updated on 28 Dec. 2013
 
 import pylab as py
 
 
 class PMData:
+    '''Class for parsing phenotype microarray data'''
     def __init__(self, filepath):
         self.filepath = filepath
         self.numClones = 0
@@ -23,9 +26,10 @@ class PMData:
 
         # Primary data structure to access data
         self.dataHash = {}  # clone->{source}->{condition}->[ODs]
-        self.beginParse()
+        self.__beginParse()
 
-    def beginParse(self):
+    def __beginParse(self):
+        '''Initiate parsing on '''
         f = open(self.filepath, 'r')
         # Begin iteration through file
         for lnum, l in enumerate(f):
@@ -34,36 +38,39 @@ class PMData:
 
             # Line 1: clone names
             if lnum == 0:
-                self.parseClones(ll)
+                self.__parseClones(ll)
 
             # Line 2: source names
             elif lnum == 1:
-                self.parseSources(ll)
+                self.__parseSources(ll)
 
             # Line 3: condition substrates
             elif lnum == 2:
-                self.parseConditions(ll)
+                self.__parseConditions(ll)
 
             # Line 4: well indicies [A-H][1-12]
             elif lnum == 3:
-                self.parseWells(ll)
+                self.__parseWells(ll)
 
             # Line 5+: OD values
             else:
-                self.parseOD(ll)
+                self.__parseOD(ll)
         f.close()
 
-    def parseClones(self, ll):
+    def __parseClones(self, ll):
+        '''Clone line parsing method'''
         self.clonesNU = ll[1:]
         self.clones = set(ll[1:])
         self.numClones = len(self.clones)
 
-    def parseSources(self, ll):
+    def __parseSources(self, ll):
+        '''Main sources line parsing method'''
         self.sourcesNU = ll[1:]
         # Initialize conditions hash
         self.conditions = {s: [] for s in set(self.sourcesNU)}
 
-    def parseConditions(self, ll):
+    def __parseConditions(self, ll):
+        '''Growth conditions line parsing method'''
         self.conditionsNU = ll[1:]
         # Add to conditions hash
         [self.conditions[self.sourcesNU[idx]].append(c)
@@ -79,25 +86,33 @@ class PMData:
         prevClone = ""
         numRep = 1
         for clone in self.clonesNU:
-            # Check if clone already exists in hash - this is replicate 1
+            # Keep track of replicate numbers
+            # Reset rep number if we reach a new clone name
             numRep = numRep + 1 if clone == prevClone else 1
+
+            # Update replicate count for clone
             self.numReplicates[clone] = numRep
             prevClone = clone
+
             if clone not in self.dataHash:
                 self.dataHash[clone] = {}
 
             if numRep not in self.dataHash[clone]:
                 self.dataHash[clone][numRep] = {}
 
+            # Add condition to main data hash
             for source, sourceList in self.conditions.items():
                 self.dataHash[clone][numRep][source] = {cond: py.array([])
                                                         for cond in sourceList}
 
-    def parseWells(self, ll):
+    def __parseWells(self, ll):
+        '''Well line parsing method'''
+        # Store as well->(source,condition)
         self.wells = {well: (source, cond) for well, source, cond in
                       zip(ll[1:], self.sourcesNU, self.conditionsNU)}
 
-    def parseOD(self, ll):
+    def __parseOD(self, ll):
+        '''OD data lines parsing method'''
         ll = [float(x) for x in ll]
         self.time.append(ll[0])
         numRep = 1
@@ -110,11 +125,17 @@ class PMData:
             # Check which clone + replicate we are observing
             numRep = numRep + 1 if clone == prevClone else 1
             prevClone = clone
+
+            # Append OD reading to array
             self.dataHash[clone][numRep][source][condition] =\
                 py.append(self.dataHash[clone][numRep][source][condition], od)
 
     def getCloneData(self, clone, source, condition):
+        '''Retrieve all growth curves for a clone+source+condition'''
+        # Initialize the numpy array to return
         retArray = py.array([self.dataHash[clone][1][source][condition]])
+        # Check if any other replicates should be returned
+        # retArray is a 2xN multidimensional numpy array
         for i in xrange(2, self.numReplicates[clone] + 1):
             retArray = py.concatenate(
                 (retArray,

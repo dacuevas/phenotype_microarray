@@ -1,25 +1,28 @@
 # GrowthCurve.py
+# Bacteria growth curve class to extract parameters
+# Use with Phenotype MicroArray analysis pipeline
+#
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
+# Updated on 28 Dec. 2013
 
-# Microbial growth curve class to extract parameters
-# Use with Phenotype MicroArray analysis pipeline
 
 import pylab as py
 import Models
 
 
 class GrowthCurve:
+    '''Bacteria growth curve class'''
     def __init__(self, data, time):
         self.dataReps = data  # OD data values (replicates implied)
         self.dataMed = py.median(self.data, axis=0)
         self.time = time  # time values
         self.asymptote = self.calcAsymptote()
-        self.maxGrowthRate, self.mgrTime = self.calcMGR()
-        self.dataLogistic, self.lag = self.calcLag()
-        self.growthLevel = self.calcGrowth()
+        self.maxGrowthRate, self.mgrTime = self.__calcMGR()
+        self.dataLogistic, self.lag = self.__calcLag()
+        self.growthLevel = self.__calcGrowth()
 
-    def calcAsymptote(self):
+    def __calcAsymptote(self):
         '''Obtain the value of the highest OD reading'''
         stop = self.nReads - 3
         maxA = -1
@@ -29,7 +32,7 @@ class GrowthCurve:
                 maxA = av
         return maxA
 
-    def calcMGR(self):
+    def __calcMGR(self):
         '''Obtain the value of the max growth'''
         stop = self.nReads - 4
         grs = []
@@ -42,14 +45,14 @@ class GrowthCurve:
         t = self.time[sortIdx + 2]  # Add 2 for mid window of MGR
         return maxGR, t
 
-    def calcLag(self):
+    def __calcLag(self):
         '''Obtain the value of the lag phase using best fit model'''
         logisticData, lag, sseF = Models(self.dataMed, self.dataMed[1],
                                          self.maxGrowthRate, self.mgrTime,
                                          self.asymptote, self.time).Logistic()
         return logisticData, lag
 
-    def calcGrowth(self):
+    def __calcGrowth(self):
         '''Calculate growth level using an adjusted harmonic mean'''
         return len(self.dataLogistic) / py.sum([(1 / (x + self.asymptote))
                                                 for x in self.dataLogistic])

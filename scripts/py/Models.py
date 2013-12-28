@@ -1,11 +1,15 @@
 # Models.py
+# Bacteria growth curve models
+#
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
+# Updated on 28 Dec. 2013
 
 import pylab as py
 
 
 class Models:
+    '''Class containing growth curve models using given growth parameters'''
     def __init__(self, data, startOD, maxgrowth, mGrowTime, asymptote, time):
         self.data = data
         self.startOD = startOD
@@ -17,7 +21,9 @@ class Models:
     def Logistic(self):
         '''Create logistic model from data'''
         tStep = self.time[1] - self.time[0]
-        # Only go up to time of inflection point
+
+        # Time vector for calculating lag phase
+        # Only go up to time of inflection point (max growth rate)
         timevec = py.arange(self.time[0], self.mGrowTime, tStep / 2)
 
         # Try using to find logistic model with optimal lag phase
