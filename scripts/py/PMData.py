@@ -25,7 +25,8 @@ class PMData:
         self.conditionsNU = []  # Array of conditions (non-unique)
 
         # Primary data structure to access data
-        self.dataHash = {}  # clone->{source}->{condition}->[ODs]
+        self.dataHash = {}  # clone->{rep #}->{source}->{condition}->[ODs]
+                            #               ->{filter}
         self.__beginParse()
 
     def __beginParse(self):
@@ -101,9 +102,11 @@ class PMData:
                 self.dataHash[clone][numRep] = {}
 
             # Add condition to main data hash
+            # Pre-set filter to False
             for source, sourceList in self.conditions.items():
-                self.dataHash[clone][numRep][source] = {cond: py.array([])
-                                                        for cond in sourceList}
+                self.dataHash[clone][numRep][source] =\
+                    {cond: {'filter': False, 'od': py.array([])}
+                     for cond in sourceList}
 
     def __parseWells(self, ll):
         '''Well line parsing method'''
@@ -128,16 +131,25 @@ class PMData:
 
             # Append OD reading to array
             self.dataHash[clone][numRep][source][condition] =\
-                py.append(self.dataHash[clone][numRep][source][condition], od)
+                py.append(self.dataHash[clone][numRep][source]
+                          [condition]['od'], od)
 
-    def getCloneData(self, clone, source, condition):
+    def getCloneReplicates(self, clone, source, condition, applyFilter=False):
         '''Retrieve all growth curves for a clone+source+condition'''
         # Initialize the numpy array to return
-        retArray = py.array([self.dataHash[clone][1][source][condition]])
+        retArray = py.array([self.dataHash[clone][1][source][condition]['od']])
         # Check if any other replicates should be returned
         # retArray is a 2xN multidimensional numpy array
         for i in xrange(2, self.numReplicates[clone] + 1):
+            # Check if filter is enabled and curve should be filtered
+            if applyFilter and \
+                    self.dataHash[clone][i][source][condition]['filter']:
+                continue
             retArray = py.concatenate(
                 (retArray,
-                 py.array([self.dataHash[clone][i][source][condition]])))
+                 py.array([self.dataHash[clone][i][source][condition]['od']])))
         return retArray
+
+    def setFilter(self, clone, rep, source, condition, filter):
+        '''Set filter for specific curve'''
+        self.dataHash[clone][rep][source][condition]['filter'] = filter

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # pmanalysis.py
-# Main driver for the PM analysis
+# Main driver for the phenotype microarray analysis
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
@@ -30,6 +30,27 @@ def printStatus(msg):
     print >> sys.stderr, timeStamp(), ' ', msg
     sys.stderr.flush()
 
+
+def curveFilter(clone, rep, source, cond, curve, pmData):
+    '''Determine if growth curve passes filters'''
+    ODmax = 0.18  # Maximum optical density in first two hours
+    # Only check from 30 minute to 2 hour mark
+    if [x for x in curve[1:5] if x >= ODmax]:
+        pmData.setFilter(clone, rep, source, cond, True)
+#        # Add to filteredCurves
+#        try:
+#            filteredCurves[clone]
+#        except:
+#            filteredCurves[clone] = {}
+#        try:
+#            filteredCurves[clone][rep]
+#        except:
+#            filteredCurves[clone][rep] = {}
+#        try:
+#            filteredCurves[clone][rep][source]
+#        except:
+#            filteredCurves[clone][rep][source] = {}
+
 ###############################################################################
 # Argument Parsing
 ###############################################################################
@@ -38,8 +59,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('infile', help='Input PM file')
 parser.add_argument('outdir',
                     help='Directory to store output files')
-parser.add_argument('-o', '--outprefix',
-                    help='Prefix prepended to output files. Default is "out"')
+parser.add_argument('-o', '--outsuffix',
+                    help='Suffix appended to output files. Default is "out"')
 parser.add_argument('-f', '--filter', action='store_true',
                     help='Apply filtering to growth curves')
 parser.add_argument('-g', '--newgrowth', action='store_true',
@@ -47,7 +68,7 @@ parser.add_argument('-g', '--newgrowth', action='store_true',
 
 args = parser.parse_args()
 inputFile = args.infile
-outPrefix = args.outprefix if args.outprefix else 'out'
+outSuffix = args.outsuffx if args.outsuffix else 'out'
 outDir = args.outdir
 filterFlag = args.filter
 newGrowthFlag = args.newgrowth
@@ -64,6 +85,18 @@ printStatus('Parsing complete.')
 printStatus('Found {} samples and {} growth conditions.'.format(
     pmData.numClones, pmData.numConditions))
 
+
+# Perform filter
+if filterFlag:
+    printStatus('Performing filtering...')
+    for c, repDict in pmData.dataHash.items():
+        for rep, sDict in repDict.items():
+            for s, condDict in sDict.items():
+                for cond, curve in condDict.items():
+                    # Perform filter check
+                    curveFilter(c, rep, s, cond, curve, pmData)
+    printStatus('Filtering complete.')
+
 printStatus('Processing growth curves and creating logistic models...')
 logData = {}
 for c in pmData.clones:
@@ -71,18 +104,19 @@ for c in pmData.clones:
     for s, condList in pmData.conditions.items():
         logData[c][s] = {}
         for cond in condList:
-            gc = GrowthCurve.GrowthCurve(
-                pmData.getCloneData(c, s, cond),
-                pmData.time)
-            logData[c][s][cond] = gc
+            curves = pmData.getCloneReplicates(c, s, cond)
+            if curves:
+                gc = GrowthCurve.GrowthCurve(curves, pmData.time)
+                logData[c][s][cond] = gc
 printStatus('Processing complete.')
 
+
 printStatus('Printing output files...')
-fhInfo = open('curveinfo_{}.txt'.format(outPrefix), 'w')
+fhInfo = open('curveinfo_{}.txt'.format(outSuffix), 'w')
 fhInfo.write('sample\tmainsource\tgrowthcondition\twell\tlag\t')
 fhInfo.write('maxiumimgrowthrate\tasymptote\tgrowthlevel\n')
 
-fhLogCurve = open('logisticcurve_{}.txt'.format(outPrefix), 'w')
+fhLogCurve = open('logistic_curve_{}.txt'.format(outSuffix), 'w')
 fhLogCurve.write('sample\tmainsource\tgrowthcondition\twell\t')
 fhLogCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhLogCurve.write('\n')
@@ -94,7 +128,10 @@ for c in pmData.clones:
         fhLogCurve.write('{}\t{}\t{}\t{}\t'.format(c, s, cond, w))
 
         # Print curve information
-        curve = logData[c][s][cond]
+        try:
+            curve = logData[c][s][cond]
+        except KeyError:
+            continue
         lag = curve.lag
         mgr = curve.maxGrowthRate
         asymptote = curve.asymptote
