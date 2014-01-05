@@ -35,14 +35,21 @@ class GrowthCurve:
     def __calcMGR(self):
         '''Obtain the value of the max growth'''
         stop = len(self.time) - 4
-        grs = []
+        #grs = []
+        maxGR = 0
         for idx in xrange(1, stop):
+
+            # Growth rate calculation
+            # (log(i+3) - log(i)) / (time(i+3) - time(i))
             gr = ((py.log(self.dataMed[idx + 3]) - py.log(self.dataMed[idx])) /
                   (self.time[idx + 3] - self.time[idx]))
-            grs.append(gr)
-        sortIdx = py.argsort(grs)[-2]  # Obtain index of desired growth rate
-        maxGR = grs[sortIdx]
-        t = self.time[sortIdx + 2]  # Add 2 for mid window of MGR
+            #grs.append(gr)
+            if idx == 1 or gr > maxGR:
+                maxGR = gr
+                t = self.time[idx + 2]
+        #sortIdx = py.argsort(grs)[-2]  # Obtain index of desired growth rate
+        #maxGR = grs[sortIdx]
+        #t = self.time[sortIdx + 2]  # Add 2 for mid window of MGR
         return maxGR, t
 
     def __calcLag(self):

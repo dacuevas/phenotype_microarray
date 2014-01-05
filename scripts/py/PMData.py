@@ -14,10 +14,11 @@ class PMData:
         self.filepath = filepath
         self.numClones = 0
         self.numConditions = 0
+        self.numFiltered = 0
         self.numReplicates = {}  # Hash of clone->{rep. count}
         self.clones = []  # Set of unique clone names
         self.conditions = {}  # Hash of source->[conditions]
-        self.wells = {}  # Hash of well->(source,condition)
+        self.wells = {}  # Hash of source->{condition]->well
         self.time = []  # Array of time values
 
         self.clonesNU = []  # Array of clones (non-unique)
@@ -110,9 +111,15 @@ class PMData:
 
     def __parseWells(self, ll):
         '''Well line parsing method'''
-        # Store as well->(source,condition)
-        self.wells = {well: (source, cond) for well, source, cond in
-                      zip(ll[1:], self.sourcesNU, self.conditionsNU)}
+        # Store as source->{condition}->well
+        for idx, well in enumerate(ll[1:]):
+            source = self.sourcesNU[idx]
+            cond = self.conditionsNU[idx]
+            try:
+                self.wells[source]
+            except KeyError:
+                self.wells[source] = {}
+            self.wells[source][cond] = well
 
     def __parseOD(self, ll):
         '''OD data lines parsing method'''
@@ -130,26 +137,62 @@ class PMData:
             prevClone = clone
 
             # Append OD reading to array
-            self.dataHash[clone][numRep][source][condition] =\
+            self.dataHash[clone][numRep][source][condition]['od'] =\
                 py.append(self.dataHash[clone][numRep][source]
                           [condition]['od'], od)
 
     def getCloneReplicates(self, clone, source, condition, applyFilter=False):
         '''Retrieve all growth curves for a clone+source+condition'''
-        # Initialize the numpy array to return
-        retArray = py.array([self.dataHash[clone][1][source][condition]['od']])
         # Check if any other replicates should be returned
         # retArray is a 2xN multidimensional numpy array
+        retArray = py.array([])
+        first = True
         for i in xrange(2, self.numReplicates[clone] + 1):
             # Check if filter is enabled and curve should be filtered
             if applyFilter and \
                     self.dataHash[clone][i][source][condition]['filter']:
                 continue
-            retArray = py.concatenate(
-                (retArray,
-                 py.array([self.dataHash[clone][i][source][condition]['od']])))
+            elif first:
+                retArray = py.array([self.dataHash[clone][i][source]
+                                    [condition]['od']])
+                first = False
+            else:
+                retArray = py.concatenate(
+                    (retArray,
+                     py.array([self.dataHash[clone][i][source]
+                              [condition]['od']])))
         return retArray
+
+    def getFiltered(self):
+        '''Retrieve array of all growth curves labeled as filtered'''
+        ret = []
+        for clone, repDict in self.dataHash.items():
+            for rep, sourceDict in repDict.items():
+                for source, condDict in sourceDict.items():
+                    for cond, odDict in condDict.items():
+                        if odDict['filter']:
+#                            try:
+#                                ret[clone]
+#                            except KeyError:
+#                                ret[clone] = {}
+#                            try:
+#                                ret[clone][source]
+#                            except KeyError:
+#                                ret[clone][source] = {}
+#                            try:
+#                                ret[clone][source][cond]
+#                            except KeyError:
+#                                ret[clone][source][cond] = {}
+                            ret.append((clone, source, cond, rep,
+                                        odDict['od']))
+                            #ret[clone][source][cond][rep] = odDict['od']
+        return ret
 
     def setFilter(self, clone, rep, source, condition, filter):
         '''Set filter for specific curve'''
+        oldFilter = self.dataHash[clone][rep][source][condition]['filter']
         self.dataHash[clone][rep][source][condition]['filter'] = filter
+        if not oldFilter and filter:
+            self.numFiltered += 1
+        elif oldFilter and not filter:
+            self.numFiltered -= 1

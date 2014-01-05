@@ -25,6 +25,7 @@ class Models:
         # Time vector for calculating lag phase
         # Only go up to time of inflection point (max growth rate)
         timevec = py.arange(self.time[0], self.mGrowTime, tStep / 2)
+        #timevec = py.arange(self.time[0], self.time[-1], tStep / 2)
 
         # Try using to find logistic model with optimal lag phase
         # y = p2 + (A-p2) / (1 + exp(( (um/A) * (L-t) ) + 2))
@@ -32,10 +33,10 @@ class Models:
         sseF = 0
         for idx, lag in enumerate(timevec):
             logDataTemp = [self.startOD + ((self.asymptote - self.startOD) /
-                                           1 + py.exp(((self.maxgrowth /
-                                                        self.asymptote) *
-                                                       (lag - t) + 2)
-                                                      )
+                                           (1 + py.exp((((self.maxgrowth /
+                                                          self.asymptote) *
+                                                         (lag - t)) + 2)
+                                                       ))
                                            ) for t in self.time]
             sse = py.sum([((self.data[i] - logDataTemp[i]) ** 2)
                           for i in xrange(len(self.data) - 1)])

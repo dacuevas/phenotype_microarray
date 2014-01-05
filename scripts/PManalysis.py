@@ -46,6 +46,9 @@ except:
     ImportError
     print 'please install the ASV module (http://tratt.net/laurie/src/python/asv/)'
 
+import time
+import datetime
+
 
 
 # Using command line arguments to capture what used to be user input values
@@ -53,6 +56,12 @@ import sys, getopt, os
 
 def usage():
 	print "\nusage: %s -i inputfile -o outputname -n output_directory\n\n" % os.path.basename(sys.argv[0])
+
+def timeStamp():
+    '''Return time stamp'''
+    t = time.time()
+    fmt = '[%Y-%m-%d %H:%M:%S]'
+    return datetime.datetime.fromtimestamp(t).strftime(fmt)
 
 input_file = None
 output_file_name = None # Prefix for all output files
@@ -692,7 +701,7 @@ class Pearson:
 
 
 #Input is used to create META
-print "Parsing '%s'\t\t\t\t(step 1/9)" % os.path.basename(input_file)
+print "%s Parsing '%s'\t\t\t\t(step 1/9)" % (timeStamp(), os.path.basename(input_file))
 sys.stdout.flush()
 META = ASV()
 META.input_from_file(input_file, TSV())
@@ -727,7 +736,7 @@ time_vector = []
 experiment.time_vector(experiment_time, time_vector = time_vector)
 
 
-print "Creating experiment data structures\t\t\t(step 2/9)"
+print "%s Creating experiment data structures\t\t\t(step 2/9)" % timeStamp()
 sys.stdout.flush()
 #The different experiment groups are identified.
 all_experiment_groups = zip(clone_row, main_nutrient_source_row, growth_conditions_row, wells_row)
@@ -754,7 +763,7 @@ while a< len(iteration_block_for_replicates)-1:
 average_of_replicates = []
 stdev_of_replicates = []
 
-print "Calculating asymptotes and growth rates\t\t\t(step 3/9)"
+print "%s Calculating asymptotes and growth rates\t\t\t(step 3/9)" % timeStamp()
 sys.stdout.flush()
 #Biological parameters are determined and stored in lists
 asymptote = []
@@ -772,7 +781,7 @@ for i in average_of_replicates:
     ExperimentUnit().p2(p2, i)
     ExperimentUnit().max_growth_rate(window_size, max_growth_rate, i, experiment_time)
 
-print "Calculating lag phases\t\t\t\t\t(step 4/9)"
+print "%s Calculating lag phases\t\t\t\t\t(step 4/9)" % timeStamp()
 sys.stdout.flush()
 #the Lag_phase_evaluation class is used to probe the points of the time vector with in the logistic model
 #searching for the one wit the least standard deviation.
@@ -781,7 +790,7 @@ for i in range(len(average_of_replicates)):
 	Lag_phase_evaluation(average_of_replicates[i], asymptote[i], p2[i], max_growth_rate[i], experiment_time, time_vector).lag_phase_selection(lag_phase)
 
 
-print "Creating logistic models\t\t\t\t(step 5/9)"
+print "%s Creating logistic models\t\t\t\t(step 5/9)" % timeStamp()
 sys.stdout.flush()
 #With the biological parameters determined. The data is fitted into a logistic model that will be used to compare samples.
 best_logistic_model = []
@@ -836,7 +845,7 @@ sublist_by_iteration_set(asymptote_ordered_by_clones, iteration_block_for_clones
 sublist_by_iteration_set(maxgrowthrate_ordered_by_clones, iteration_block_for_clones_2, maxgrowthrate_by_clones)
 
 
-print "Calculating harmonic means and classifications\t\t(step 6/9)"
+print "%s Calculating harmonic means and classifications\t\t(step 6/9)" % timeStamp()
 sys.stdout.flush()
 harmonic_mean = []
 harmonic_mean_b = []
@@ -857,7 +866,7 @@ classification_by_clones = []
 sublist_by_iteration_set(classification, iteration_block_for_clones_2, classification_by_clones)
 
 
-print "Calculating Dice similarity matrices\t\t\t(step 7/9)"
+print "%s Calculating Dice similarity matrices\t\t\t(step 7/9)" % timeStamp()
 sys.stdout.flush()
 sim_matrix_row_col = []
 sim_matrix = []
@@ -871,7 +880,7 @@ paired_list = []
 pairwise_groupment(harmonic_mean_by_clones, paired_list)
 
 
-print "Calculating Pearson correlations\t\t\t(step 8/9)"
+print "%s Calculating Pearson correlations\t\t\t(step 8/9)" % timeStamp()
 sys.stdout.flush()
 correlation = []
 for i in paired_list:
@@ -886,7 +895,7 @@ pearson_matrix = []
 sublist_by_iteration_set(correlation, iteration_block_for_pearson_2, pearson_matrix)
 
 
-print "Writing output files\t\t\t\t\t(step 9/9)"
+print "%s Writing output files\t\t\t\t\t(step 9/9)" % timeStamp()
 sys.stdout.flush()
 # 6)write the output file
 
@@ -1076,4 +1085,4 @@ for i in cbar.ax.get_yticklabels():
 	i.set_fontsize(8)
 
 savefig("%s/%s_heatmap.png" % (output_dir,output_file_name), dpi=300, figsize = (15,15))
-
+print "%s Complete!" % timeStamp()
