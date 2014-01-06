@@ -51,12 +51,12 @@ E2	Nitrogen	Putrescine	0.3
 E3	Nitrogen	D-Glucosamine	0.3
 E4	Nitrogen	2 Deoxy-D-Ribose	0.3
 E5	Nitrogen	Thymidine	0.3
-E6	Nitrogen	Blank	0.0
-E7	Nitrogen	Blank	0.0
-E8	Nitrogen	Blank	0.0
-E9	Nitrogen	Blank	0.0
-E10	Nitrogen	Blank	0.0
-E11	Nitrogen	Blank	0.0
+E6	Nitrogen	Blank1	0.0
+E7	Nitrogen	Blank2	0.0
+E8	Nitrogen	Blank3	0.0
+E9	Nitrogen	Blank4	0.0
+E10	Nitrogen	Blank5	0.0
+E11	Nitrogen	Blank6	0.0
 E12	Sulfur	Negative Control	0.0
 F1	Sulfur	L-Methionine	0.3
 F2	Sulfur	L-Cysteine	0.3
@@ -92,5 +92,5 @@ H7	Phosphorus	Potassium phosphate	0.3
 H8	Phosphorus	DL-Alpha-Glycerophosphate	0.3
 H9	Phosphorus	Creatinephosphate	0.3
 H10	Phosphorus	Beta-Glycerophosphate	0.3
-H11	Phosphorus	Blank	0.0
-H12	Phosphorus	Blank	0.0
+H11	Phosphorus	Blank7	0.0
+H12	Phosphorus	Blank8	0.0
