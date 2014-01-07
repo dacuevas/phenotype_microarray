@@ -135,7 +135,7 @@ printStatus('Printing output files...')
 # curveinfo file: curve parameters for each sample
 fhInfo = open('{}/curveinfo_{}.txt'.format(outDir, outSuffix), 'w')
 fhInfo.write('sample\tmainsource\tgrowthcondition\twell\tlag\t')
-fhInfo.write('maxiumimgrowthrate\tasymptote\tgrowthlevel\n')
+fhInfo.write('maximumgrowthrate\tasymptote\tgrowthlevel\n')
 
 # logistic_curve file: logistic curves
 fhLogCurve = open('{}/logistic_curves_{}.txt'.format(outDir, outSuffix), 'w')
