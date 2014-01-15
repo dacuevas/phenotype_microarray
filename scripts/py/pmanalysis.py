@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 28 Dec. 2013
+# Updated on 15 Jan. 2014
 
 import argparse
 import sys
@@ -51,10 +51,14 @@ def printFiltered(pmData):
     fhFilter.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
     fhFilter.write('\n')
     for tup in data:
+        # Unpack tuple and obtain data
         clone, source, cond, rep, od = tup
         well = pmData.wells[source][cond]
+
+        # Print sample information
         fhFilter.write('{}\t{}\t{}\t{}\t{}\t'.format(clone, rep,
                                                      source, cond, well))
+        # Print OD readings
         fhFilter.write('\t'.join(['{:.3f}'.format(x) for x in od]))
         fhFilter.write('\n')
     fhFilter.close()
@@ -101,12 +105,21 @@ if verbose:
 # Perform filter
 if filterFlag:
     printStatus('Performing filtering...')
+    # Iterate through clones
     for c, repDict in pmData.dataHash.items():
+
+        # Iterate through replicates
         for rep, sDict in repDict.items():
+
+            # Iterate through media sources
             for s, condDict in sDict.items():
+
+                # Iterate through growth condtions
                 for cond, odDict in condDict.items():
+
                     # Perform filter check
                     curveFilter(c, rep, s, cond, odDict['od'], pmData)
+
     printStatus('Filtering complete.')
     if verbose:
         printStatus('Filtered {} samples.'.format(pmData.numFiltered))
@@ -115,12 +128,22 @@ if filterFlag:
 # Create growth curves and logistic models
 printStatus('Processing growth curves and creating logistic models...')
 logData = {}
+# Iterate through clones
 for c in pmData.clones:
     logData[c] = {}
+
+    # Iterate through media sources
     for s, condList in pmData.conditions.items():
         logData[c][s] = {}
+
+        # Iterate through growth conditions
         for cond in condList:
             curves = pmData.getCloneReplicates(c, s, cond, filterFlag)
+
+            # Add curve to logData hash
+            # Will not add if:
+            # 1. Filtering is on
+            # 2. All replicates were filtered out
             if len(curves) > 0:
                 gc = GrowthCurve.GrowthCurve(curves, pmData.time)
                 logData[c][s][cond] = gc
@@ -149,25 +172,22 @@ fhMedCurve.write('sample\tmainsource\tgrowthcondition\twell\t')
 fhMedCurve.write('\t'.join(['{:.1f}'.format(x) for x in pmData.time]))
 fhMedCurve.write('\n')
 
-#for c in pmData.clones:
-#    for s, condDict in pmData.wells.items():
-#        for cond, w in condDict.items():
-            # Test to see if item was not filtered out and still exists
-#            try:
-#                curve = logData[c][s][cond]
-#            except KeyError:
-#                continue
-
+# Iterate through clones
 for c, sourceDict in logData.items():
+
+    # Iterate through media sources
     for s, condDict in sourceDict.items():
+
+        # Iterate through growth conditions
         for cond, curve in condDict.items():
             w = pmData.wells[s][cond]
 
+            # Print sample information
             fhInfo.write('{}\t{}\t{}\t{}\t'.format(c, s, cond, w))
             fhLogCurve.write('{}\t{}\t{}\t{}\t'.format(c, s, cond, w))
             fhMedCurve.write('{}\t{}\t{}\t{}\t'.format(c, s, cond, w))
 
-            # Print curve information
+            # Print OD readings
             lag = curve.lag
             mgr = curve.maxGrowthRate
             asymptote = curve.asymptote

@@ -3,18 +3,17 @@
 #
 # Author: Daniel A Cuevas
 # Created on 21 Nov. 2013
-# Updated on 28 Dec. 2013
+# Updated on 15 Jan. 2014
 
 import pylab as py
 
 
 class Models:
     '''Class containing growth curve models using given growth parameters'''
-    def __init__(self, data, startOD, maxgrowth, mGrowTime, asymptote, time):
+    def __init__(self, data, startOD, maxgrowth, asymptote, time):
         self.data = data
         self.startOD = startOD
         self.maxgrowth = maxgrowth
-        self.mGrowTime = mGrowTime
         self.asymptote = asymptote
         self.time = time
 
@@ -23,14 +22,15 @@ class Models:
         tStep = self.time[1] - self.time[0]
 
         # Time vector for calculating lag phase
-        # Only go up to time of inflection point (max growth rate)
-        #timevec = py.arange(self.time[0], self.mGrowTime, tStep / 2)
         timevec = py.arange(self.time[0], self.time[-1], tStep / 2)
 
         # Try using to find logistic model with optimal lag phase
         # y = p2 + (A-p2) / (1 + exp(( (um/A) * (L-t) ) + 2))
         sse = 0
         sseF = 0
+
+        # Attempt to use every possible value in the time vector as the lag
+        # Choose lag that creates best-fit model
         for idx, lag in enumerate(timevec):
             logDataTemp = [self.startOD + ((self.asymptote - self.startOD) /
                                            (1 + py.exp((((self.maxgrowth /
@@ -46,6 +46,9 @@ class Models:
                 sseF = sse
 
         return logisticData, lagF, sseF
+
+
+# Gompertz model not available/not used right now
 
 #    def Gompertz(self):
 #        '''Create Gompertz model from data'''

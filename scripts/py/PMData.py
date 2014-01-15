@@ -3,7 +3,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-# Updated on 28 Dec. 2013
+# Updated on 15 Jan. 2014
 
 import pylab as py
 
@@ -26,12 +26,12 @@ class PMData:
         self.conditionsNU = []  # Array of conditions (non-unique)
 
         # Primary data structure to access data
-        self.dataHash = {}  # clone->{rep #}->{source}->{condition}->[ODs]
-                            #               ->{filter}
+        self.dataHash = {}  # clone->{rep #}|->{source}->{condition}->[ODs]
+                            #               |->{filter}
         self.__beginParse()
 
     def __beginParse(self):
-        '''Initiate parsing on '''
+        '''Initiate parsing on the given PM file'''
         f = open(self.filepath, 'r')
         # Begin iteration through file
         for lnum, l in enumerate(f):
@@ -61,25 +61,32 @@ class PMData:
 
     def __parseClones(self, ll):
         '''Clone line parsing method'''
+        # All non-unique clones (order preserved)
         self.clonesNU = ll[1:]
+
+        # Unique set of clones
         self.clones = set(ll[1:])
         self.numClones = len(self.clones)
 
     def __parseSources(self, ll):
         '''Main sources line parsing method'''
+        # All non-unique main sources (order preserved)
         self.sourcesNU = ll[1:]
+
         # Initialize conditions hash
         self.conditions = {s: [] for s in set(self.sourcesNU)}
 
     def __parseConditions(self, ll):
         '''Growth conditions line parsing method'''
+        # All non-unique growth conditions (order preserved)
         self.conditionsNU = ll[1:]
+
         # Add to conditions hash
         [self.conditions[self.sourcesNU[idx]].append(c)
          for idx, c in enumerate(self.conditionsNU)]
 
         # Duplicate conditions created for each source
-        # in above method - must remove
+        # in above method - must remove for unique set
         for source in self.conditions:
             self.conditions[source] = set(self.conditions[source])
             self.numConditions += len(self.conditions[source])
@@ -116,6 +123,7 @@ class PMData:
             source = self.sourcesNU[idx]
             cond = self.conditionsNU[idx]
             try:
+                # Intialize hash if the source was not yet added
                 self.wells[source]
             except KeyError:
                 self.wells[source] = {}
@@ -124,6 +132,8 @@ class PMData:
     def __parseOD(self, ll):
         '''OD data lines parsing method'''
         ll = [float(x) for x in ll]
+
+        # Add the current time
         self.time.append(ll[0])
         numRep = 1
         prevClone = ""
@@ -147,52 +157,61 @@ class PMData:
         # retArray is a 2xN multidimensional numpy array
         retArray = py.array([])
         first = True
-        for i in xrange(2, self.numReplicates[clone] + 1):
+        for i in xrange(1, self.numReplicates[clone] + 1):
+            # Get replicate
+            filterMe = self.dataHash[clone][i][source][condition]['filter']
+            currCurve = self.dataHash[clone][i][source][condition]['od']
+
             # Check if filter is enabled and curve should be filtered
-            if applyFilter and \
-                    self.dataHash[clone][i][source][condition]['filter']:
+            if applyFilter and filterMe:
                 continue
+
+            # Create multidimensional array if first
             elif first:
-                retArray = py.array([self.dataHash[clone][i][source]
-                                    [condition]['od']])
+                retArray = py.array([currCurve])
                 first = False
+
+            # Append to multidimensional array if not first
             else:
-                retArray = py.concatenate(
-                    (retArray,
-                     py.array([self.dataHash[clone][i][source]
-                              [condition]['od']])))
+                retArray = py.concatenate((retArray, py.array([currCurve])))
+
         return retArray
 
     def getFiltered(self):
         '''Retrieve array of all growth curves labeled as filtered'''
+        # Create array of tuples for each replicate curve labeled as filtered
+        # Format: [(clone, main source, growth condition,
+        #           replicate #, [OD values]), (next...), ...]
         ret = []
+
+        # Iterate through clones
         for clone, repDict in self.dataHash.items():
+
+            # Iterate through replicates
             for rep, sourceDict in repDict.items():
+
+                # Iterate through main sources
                 for source, condDict in sourceDict.items():
+
+                    # Iterate through growth conditions
                     for cond, odDict in condDict.items():
+
+                        # Check if filter is set to True
                         if odDict['filter']:
-#                            try:
-#                                ret[clone]
-#                            except KeyError:
-#                                ret[clone] = {}
-#                            try:
-#                                ret[clone][source]
-#                            except KeyError:
-#                                ret[clone][source] = {}
-#                            try:
-#                                ret[clone][source][cond]
-#                            except KeyError:
-#                                ret[clone][source][cond] = {}
                             ret.append((clone, source, cond, rep,
                                         odDict['od']))
-                            #ret[clone][source][cond][rep] = odDict['od']
+
         return ret
 
     def setFilter(self, clone, rep, source, condition, filter):
         '''Set filter for specific curve'''
         oldFilter = self.dataHash[clone][rep][source][condition]['filter']
         self.dataHash[clone][rep][source][condition]['filter'] = filter
+
+        # If filter changed from False to True, increment number of filtered
         if not oldFilter and filter:
             self.numFiltered += 1
+
+        # If filter changed from True to False, decrement number of filtered
         elif oldFilter and not filter:
             self.numFiltered -= 1
