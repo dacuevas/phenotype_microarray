@@ -3,9 +3,10 @@
 #
 # Author: Daniel A Cuevas
 # Created on 12 Dec. 2013
-# Updated on 15 Jan. 2014
+# Updated on 05 Mar. 2014
 
 import pylab as py
+import sys
 
 
 class PMData:
@@ -27,7 +28,7 @@ class PMData:
 
         # Primary data structure to access data
         self.dataHash = {}  # clone->{rep #}|->{source}->{condition}->[ODs]
-                            #               |->{filter}
+                            #                                      |->{filter}
         self.__beginParse()
 
     def __beginParse(self):
@@ -58,6 +59,9 @@ class PMData:
             else:
                 self.__parseOD(ll)
         f.close()
+
+        # Check each growth curve is the same length
+        self.__QACheck()
 
     def __parseClones(self, ll):
         '''Clone line parsing method'''
@@ -93,15 +97,26 @@ class PMData:
 
         # Initialize main data hash
         prevClone = ""
+        prevCond = ""
         numRep = 1
-        for clone in self.clonesNU:
+        if self.numClones == 1:
+            totalReps = len(self.conditionsNU) / self.numConditions
+
+        for idx, clone in enumerate(self.clonesNU):
+            currCond = self.conditionsNU[idx]
             # Keep track of replicate numbers
             # Reset rep number if we reach a new clone name
-            numRep = numRep + 1 if clone == prevClone else 1
+            if self.numClones == 1:
+                numRep = (idx % totalReps) + 1
+
+            else:
+                numRep = numRep + 1 if (clone == prevClone and
+                                        currCond == prevCond) else 1
 
             # Update replicate count for clone
             self.numReplicates[clone] = numRep
             prevClone = clone
+            prevCond = currCond
 
             if clone not in self.dataHash:
                 self.dataHash[clone] = {}
@@ -137,19 +152,48 @@ class PMData:
         self.time.append(ll[0])
         numRep = 1
         prevClone = ""
+        prevCond = ""
+        if self.numClones == 1:
+            totalReps = len(self.conditionsNU) / self.numConditions
+
         for idx, od in enumerate(ll[1:]):
             clone = self.clonesNU[idx]
             source = self.sourcesNU[idx]
             condition = self.conditionsNU[idx]
 
             # Check which clone + replicate we are observing
-            numRep = numRep + 1 if clone == prevClone else 1
+            if self.numClones == 1:
+                numRep = (idx % totalReps) + 1
+
+            else:
+                numRep = numRep + 1 if (clone == prevClone and
+                                        condition == prevCond) else 1
             prevClone = clone
 
             # Append OD reading to array
             self.dataHash[clone][numRep][source][condition]['od'] =\
                 py.append(self.dataHash[clone][numRep][source]
                           [condition]['od'], od)
+
+    def __QACheck(self):
+        '''QA check to ensure stable data set'''
+        problems = []
+        numTime = len(self.time)
+        for clone, repDict in self.dataHash.items():
+            for rep, sourceDict in repDict.items():
+                for source, condDict in sourceDict.items():
+                    for cond, odDict in condDict.items():
+
+                        # Find number of values in growth curve
+                        numVals = len(odDict['od'])
+                        if numVals != numTime:
+                            problems.append([clone, rep, source, cond,
+                                             'time:{}\tcurve:{}'.format(
+                                                 numTime, numVals)])
+
+        # Print out issues
+        for p in problems:
+            print >> sys.stderr, '\t'.join([str(x) for x in p])
 
     def getCloneReplicates(self, clone, source, condition, applyFilter=False):
         '''Retrieve all growth curves for a clone+source+condition'''
@@ -173,7 +217,8 @@ class PMData:
 
             # Append to multidimensional array if not first
             else:
-                retArray = py.concatenate((retArray, py.array([currCurve])))
+                retArray = py.concatenate((retArray,
+                                           py.array([currCurve])))
 
         return retArray
 

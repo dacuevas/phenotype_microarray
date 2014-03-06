@@ -4,7 +4,7 @@
 #
 # Author: Daniel A Cuevas
 # Created on 22 Nov. 2013
-# Updated on 15 Jan. 2014
+# Updated on 05 Mar. 2014
 
 import argparse
 import sys
@@ -74,6 +74,8 @@ parser.add_argument('outdir',
                     help='Directory to store output files')
 parser.add_argument('-o', '--outsuffix',
                     help='Suffix appended to output files. Default is "out"')
+parser.add_argument('--debug', action='store_true',
+                    help='Output for debugging purposes')
 parser.add_argument('-f', '--filter', action='store_true',
                     help='Apply filtering to growth curves')
 parser.add_argument('-g', '--newgrowth', action='store_true',
@@ -88,6 +90,7 @@ outDir = args.outdir
 filterFlag = args.filter
 newGrowthFlag = args.newgrowth
 verbose = args.verbose
+debugOut = args.debug
 
 ###############################################################################
 # Data Processing
@@ -100,6 +103,12 @@ printStatus('Parsing complete.')
 if verbose:
     printStatus('Found {} samples and {} growth conditions.'.format(
         pmData.numClones, pmData.numConditions))
+if debugOut:
+    dbug_numReps = 0
+    for c in pmData.numReplicates:
+        dbug_numReps += pmData.numReplicates[c]
+
+    printStatus('DEBUG: Found {} replicates.'.format(dbug_numReps))
 
 
 # Perform filter
@@ -123,6 +132,9 @@ if filterFlag:
     printStatus('Filtering complete.')
     if verbose:
         printStatus('Filtered {} samples.'.format(pmData.numFiltered))
+
+elif verbose:
+    printStatus('Filtering option not given -- no filtering performed.')
 
 
 # Create growth curves and logistic models
