@@ -169,6 +169,7 @@ class PMData:
                 numRep = numRep + 1 if (clone == prevClone and
                                         condition == prevCond) else 1
             prevClone = clone
+            prevCond = condition
 
             # Append OD reading to array
             self.dataHash[clone][numRep][source][condition]['od'] =\
