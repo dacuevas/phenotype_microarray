@@ -23,9 +23,9 @@ F3	Carbon	L-Rhamnose	0.3
 G3	Nitrogen	Uridine	0.3
 H3	Nitrogen	L-Glutathione	0.2
 A4	Carbon	Potassium Sorbate	0.3
-B4	Carbon	Sodium Succinate	0.3
+B4	Carbon	Succinate	0.3
 C4	Carbon	Salicoside	0.3
-D4	Carbon	4 Hydroxy-Phenyl Acetic Acid	0.3
+D4	Carbon	4 Hydroxy-Phenylacetate	0.3
 E4	Carbon	L-Cysteine	0.3
 F4	Carbon	Putrescine	0.3
 G4	Nitrogen	Inosine	0.3
@@ -79,7 +79,7 @@ F10	Carbon	D-Arabinose	0.3
 G10	Nitrogen	Thiourea	0.3
 H10	Nitrogen	Cytosine	0.2
 A11	Carbon	Malic Acid	0.3
-B11	Carbon	Sodium Pyruvate	0.3
+B11	Carbon	Pyruvate	0.3
 C11	Carbon	Trehalose	0.3
 D11	Carbon	D-Aspartic Acid	0.2
 E11	Carbon	L-Cysteic Acid	0.3
