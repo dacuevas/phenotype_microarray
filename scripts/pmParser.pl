@@ -5,7 +5,7 @@ use strict;
 use Date::Parse;
 use File::Basename;
 use Getopt::Long;
-use Statistics::Basic qw(median);
+use Statistics::Basic qw(median mean);
 
 
 ################################################
@@ -30,6 +30,7 @@ REQUIRED
                                       (Given preference over -f)
 
 OPTIONS
+    -m, --mean                      : Calculate mean instead of median
     -p, --plate "platePath.txt"     : Plate filepath
     -r, --reps                      : Replicate flag
     -?, -h, --help                  : This usage message
@@ -206,6 +207,50 @@ sub calcMedian {
 
 
 ###
+# Calculate the mean of the replicates and return the new data
+# hash. This hash will not have a replicates key.
+###
+sub calcMean {
+    my ($data) = @_;
+    my $newdata = {};
+    foreach my $c ( keys %$data ) {
+        my $repCounter = 0;
+        foreach my $r ( keys %{$data->{$c}} ) {
+            ++$repCounter;
+            foreach my $w ( keys %{$data->{$c}->{$r}} ) {
+                my @ods = ();
+                foreach my $t( keys %{$data->{$c}->{$r}->{$w}} ) {
+                    my $val = ($data->{$c}->{$r}->{$w}->{$t}) ?
+                                $data->{$c}->{$r}->{$w}->{$t} :
+                                0;
+                    if( $repCounter == 1 ) {
+                        $newdata->{$c}->{$w}->{$t} = ();
+                    }
+                    push(@{$newdata->{$c}->{$w}->{$t}}, $val);
+                }
+            }
+        }
+    }
+    foreach my $c ( keys %$newdata ) {
+        foreach my $w ( keys %{$newdata->{$c}} ) {
+            foreach my $t ( keys %{$newdata->{$c}->{$w}} ) {
+                #print $t."\n";
+                my @ods = @{$newdata->{$c}->{$w}->{$t}};
+                my $numReps = @ods;
+                my $meanvector = mean()->set_size($numReps);
+                foreach( @ods ) {
+                    $meanvector->insert($_);
+                }
+                my $mean = $meanvector->query;
+                $newdata->{$c}->{$w}->{$t} = $mean;
+            }
+        }
+    }
+    return $newdata;
+}
+
+
+###
 # Input is the data hash-reference object. Information is printed in the order:
 # (All output is tab-delimited)
 # Row 1 (header) -- clone (main_source substrate || well#) [time]
@@ -263,6 +308,7 @@ sub printData {
 my $opts = {
                     files    =>   "",
                     dir      =>   "",
+                    mean     =>   "",
                     plate    =>   "",
                     reps     =>   "",
                     help     =>   ""
@@ -273,6 +319,8 @@ GetOptions(
                     "files=s"  =>   \$opts->{files},
                     "d=s"      =>   \$opts->{dir},
                     "dir=s"    =>   \$opts->{dir},
+                    "m"        =>   \$opts->{mean},
+                    "mean"     =>   \$opts->{mean},
                     "p=s"      =>   \$opts->{plate},
                     "plate=s"  =>   \$opts->{plate},
                     "r"        =>   \$opts->{reps},
@@ -329,7 +377,9 @@ foreach my $f ( @filepaths ) {
 }
 
 # If replicates exist, calculate median
-$data = &calcMedian($data) if $opts->{reps};
+$data = !$opts->{reps}  ? $data
+        : $opts->{mean} ? &calcMean($data)
+        :                 &calcMedian($data);
 
 ######################################################
 ## Data printout process
