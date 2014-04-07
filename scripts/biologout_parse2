@@ -32,7 +32,7 @@ while(<FH>)
 	elsif($_ =~ /^Data\:\s+([\w\s]+?)$/)
 	{
 		$datatype = $1;
-		push @{$data->{$file}->{$datatype}->{'time'}}, $times; 
+		push @{$data->{$file}->{$datatype}->{'time'}}, $times;
 	}
 	elsif($_ =~ /(\d.*?\s.{11})\s+/)
 	{
@@ -99,17 +99,16 @@ sub print_ordered
 	my ($data, $file, $data_units, $wellnum) = @_;
 	my @wells = map {$wellnum->{$_}} sort {$a <=> $b} keys %{$wellnum};
 	my ($time_reading);
-	print STDOUT "$file\n";
 	foreach my $datatype (keys %{$data_units})
 	{
 		print STDOUT "$datatype\t$data_units->{$datatype}\n";
-		print STDOUT "Minutes\t", join "\t", @wells, "\n";
+		print STDOUT "Minutes\t", join("\t", @wells), "\n";
 		for (my $i = 0; $i< scalar (@{$data->{$file}->{$datatype}->{'time'}}); $i++)
 		{
-			print STDOUT "$data->{$file}->{$datatype}->{'time'}->[$i]\t";
+			print STDOUT "$data->{$file}->{$datatype}->{'time'}->[$i]";
 			foreach my $well (@wells)
 			{
-				print STDOUT "$data->{$file}->{$datatype}->{$well}->[$i]\t";
+				print STDOUT "\t$data->{$file}->{$datatype}->{$well}->[$i]";
 			}
 			print STDOUT "\n";
 			

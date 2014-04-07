@@ -159,7 +159,7 @@ foreach my $file (@{$option_hash->{'files'}})
 			elsif ($_ =~ /^\d+/)
 			{
 				@data = split /\t/, $_;
-				for (my $i = 0; $i < scalar (@data); $i++)
+                for (my $i = 0; $i < scalar (@data); $i++)
 				{
 					if($option_hash->{'log2'} =~ /y/i)
 					{
@@ -245,7 +245,7 @@ foreach my $well (@{$option_hash->{'wells'}})
 						#push @{$report->[$i]}, $raw_data->{$name}->{$rep}->{'Minutes'}->[$i-3];
 					}
 				}
-				for (my $i = 4; $i < scalar @$report; $i++)
+                for (my $i = 4; $i < scalar @$report; $i++)
 				#for (my $i = 3; $i < scalar @$report; $i++)
 				{
 					push @{$report->[$i]}, $raw_data->{$name}->{$rep}->{$well}->[$i-4];
@@ -311,7 +311,7 @@ for (my $i = 2; $i < $num_ent +2; $i++)
 =cut
 foreach my $line (@$report)
 {
-	print STDOUT join "\t", @$line, "\n";
+	print STDOUT join("\t", @$line), "\n";
 }
 #die Dumper($phenotypes);
 

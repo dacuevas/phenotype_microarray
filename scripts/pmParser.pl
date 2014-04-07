@@ -39,13 +39,13 @@ NOTES
     FILE NAME FORMATS:
         When using replicates be sure to have the file name in the format,
 
-        <Clone Name>_<Replicate Letter>_<other text>.txt
-        Regex used:    <Clone Name> -- [A-Za-z0-9-.]+
+        <Sample Name>_<Replicate Letter>_<other text>.txt
+        Regex used:    <Sample Name> -- [A-Za-z0-9-.]+
                        <Replicate Letter> -- [A-Za-z0-9]+
 
         When replicates are not indicated,
-        <Clone Name>_<other text>.txt
-        Regex used:    <Clone Name> -- [A-Za-z0-9-._]+
+        <Sample Name>_<other text>.txt
+        Regex used:    <Sample Name> -- [A-Za-z0-9-._]+
 
 END
 ;
@@ -253,10 +253,10 @@ sub calcMean {
 ###
 # Input is the data hash-reference object. Information is printed in the order:
 # (All output is tab-delimited)
-# Row 1 (header) -- clone (main_source substrate || well#) [time]
-# Row 2-n -- clone (main_source substrate || well#) [data]
-# Note: When replicates are kept separate, the clone is separated into two
-# columns for "clone" and "rep"
+# Row 1 (header) -- sample (main_source substrate || well#) [time]
+# Row 2-n -- sample (main_source substrate || well#) [data]
+# Note: When replicates are kept separate, the sample is separated into two
+# columns for "sample" and "rep"
 ###
 sub printData {
     my ($data, $plate, $reps, $time) = @_;
@@ -275,7 +275,7 @@ sub printData {
                 my $ms = $plate ? $plate->{$w}->{main_source} : 0;
                 my $s = $plate ? $plate->{$w}->{substrate} : 0;
                 $plate ?
-                    print join("\t", ($c, $ms, $s, @ods))."\n" :
+                    print join("\t", ($c, $ms, $s, $w, @ods))."\n" :
                     print join("\t", ($c, $w, @ods))."\n"
                 ;
             }
@@ -292,7 +292,7 @@ sub printData {
                     my $ms = $plate ? $plate->{$w}->{main_source} : 0;
                     my $s = $plate ? $plate->{$w}->{substrate} : 0;
                     $plate ?
-                        print join("\t", ($c, $ms, $s, @ods))."\n" :
+                        print join("\t", ($c, $ms, $s, $w, @ods))."\n" :
                         print join("\t", ($c, $w, @ods))."\n"
                     ;
                 }
@@ -388,8 +388,8 @@ $data = !$opts->{reps}  ? $data
 # Print out headers first
 # Depends on if a plate file was supplied or not
 $plate ?
-    print "clone\tmain_source\tsubstrate" :
-    print "clone\twell";
+    print "sample\tmain_source\tsubstrate\twell" :
+    print "sample\twell";
 
 # Print out hours
 foreach my $timeIter( @time ) {
