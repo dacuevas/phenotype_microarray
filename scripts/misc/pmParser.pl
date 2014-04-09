@@ -388,7 +388,7 @@ $data = !$opts->{reps}  ? $data
 # Print out headers first
 # Depends on if a plate file was supplied or not
 $plate ?
-    print "sample\tmain_source\tsubstrate\twell" :
+    print "sample\tmainsource\tsubstrate\twell" :
     print "sample\twell";
 
 # Print out hours
